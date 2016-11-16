@@ -1,28 +1,24 @@
 <?php 
 namespace AdvancedEloquent\Export\Traits;
 
-use AdvancedEloquent\Export\Model;
-// use Illuminate\Database\Eloquent\Model;
-use AdvancedEloquent\Export\Interfaces\ExportableInterface;
+use Illuminate\Database\Eloquent\Model as BaseModel;
+use Illuminate\Database\Eloquent\Collection as BaseCollection;
+use AdvancedEloquent\Export\Collection;
+use AdvancedEloquent\Export\Interfaces\Exportable;
 use AdvancedEloquent\Export\Relations\BelongsTo;
 use AdvancedEloquent\Export\Relations\BelongsToMany;
 use AdvancedEloquent\Export\Relations\HasMany;
-use AdvancedEloquent\Export\Collection;
-// use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
-use Exception;
+use AdvancedEloquent\Export\Exceptions\ExportException;
 use ReflectionClass;
 
-trait ExportTrait {
+trait ExportAndImport {
 
     /**
      * [exportableAttributes description]
      * @return [type] [description]
      */
-    protected function exportableAttributes()
-    {
-        return [];
-    }
+    abstract protected function exportableAttributes();
 
     /**
      * [export description]
@@ -43,18 +39,27 @@ trait ExportTrait {
         foreach ($attributes as $attributeName) {
 
             $attribute = $this->getAttribute($attributeName);
-            if ($attribute instanceof Model
-                // && $attribute instanceof ExportableInterface
-                ) {
+            if ($attribute instanceof BaseModel &&
+                $attribute instanceof Exportable) {
                 $exportData['dependencies'][$attributeName] = $attribute->export();
             }
-            elseif ($attribute instanceof Collection &&
-                    // $attribute instanceof ExportableInterface && 
+            elseif ($attribute instanceof BaseCollection &&
+                    $attribute instanceof Exportable && 
                     $withChildrenRealtion) {
                 $exportData['relations'][$attributeName] = $attribute->export();
             }
             elseif(!is_object($attribute)) {
                 $exportData['attributes'][$attributeName] = $attribute;
+            }
+            else {
+                throw new ExportException(
+                    trans('eloquent-export::export.uncknown_export_type',
+                    [
+                        'attribute' => $attributeName,
+                        'class' => get_class($this),
+                        'attribute_class' => get_class($attribute),
+                    ])
+                );
             }
         }
         return $exportData;
@@ -67,7 +72,7 @@ trait ExportTrait {
      * @param  array  $additionalAttributes [description]
      * @return [type]                       [description]
      */
-    public static function import(Array $model, $additionalAttributes = [])
+    public static function import(Array $model, Array $additionalAttributes = [])
     {
         $_this = new static;
 
@@ -84,7 +89,7 @@ trait ExportTrait {
             // Определяем класс зависимости, естествено с проверкой интерфейса
             $reflection = isset($attributeValue['class']) ? new ReflectionClass($attributeValue['class']) : null;
 
-            if ( $reflection && $reflection->implementsInterface(ExportableInterface::class) ) {
+            if ( $reflection && $reflection->implementsInterface('AdvancedEloquent\Export\Interfaces\Importable') ) {
 
                 $dependency = $reflection->newInstance()->import($attributeValue, $additionalAttributes);
 
@@ -97,8 +102,8 @@ trait ExportTrait {
         // дополнительные атрибуты и смотрим есть ли такой объект в БД
         $attributes = array_merge(
                 $foreignKeys,
-                $_this->filterAdditionalAttributes($additionalAttributes),
-                $_this->filterAdditionalAttributes($model['attributes'])
+                $_this->filterFillableAttributes($additionalAttributes),
+                $_this->filterFillableAttributes($model['attributes'])
             );
 
         $instance = static::firstOrCreate($attributes);
@@ -112,11 +117,11 @@ trait ExportTrait {
     }
 
     /**
-     * [filterAdditionalAttributes description]
+     * [filterFillableAttributes description]
      * @param  Array  $attributes [description]
      * @return [type]             [description]
      */
-    protected function filterAdditionalAttributes(Array $attributes)
+    protected function filterFillableAttributes(Array $attributes)
     {
         $filteredKeys = array_intersect( array_keys($attributes), $this->getFillable() );
         return array_only($attributes, $filteredKeys);

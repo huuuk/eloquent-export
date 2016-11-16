@@ -2,11 +2,13 @@
 namespace AdvancedEloquent\Export\Relations;
 
 use Illuminate\Database\Eloquent\Relations\HasMany as BaseRelation;
+use AdvancedEloquent\Export\Interfaces\Importable;
+use AdvancedEloquent\Export\Exceptions\ImportException;
 
 /**
 * 
 */
-class HasMany extends BaseRelation;
+class HasMany extends BaseRelation
 {
     /**
      * [import description]
@@ -16,6 +18,11 @@ class HasMany extends BaseRelation;
      */
     public function import(Array $models, $additionalAttributes = [])
     {
+        if ( !($this->related instanceof Importable) ) {
+            throw new ImportException(
+                trans( 'eloquent-export::import.not_importable', [ 'class' => get_class($this->related) ] )
+            );
+        }
         $attributes = array_merge($additionalAttributes, [$this->getPlainForeignKey() => $this->getParentKey()]);
         foreach ($models as $model) {
             $this->related->import($model, $attributes);

@@ -2,19 +2,13 @@
 namespace AdvancedEloquent\Export;
 
 use Illuminate\Database\Eloquent\Collection as BaseEloquentCollection;
-use AdvancedEloquent\Export\Interfaces\ExportableInterface;
+use AdvancedEloquent\Export\Traits\ExportCollection;
+use AdvancedEloquent\Export\Interfaces\Exportable;
 
 /**
  * 
  */
-class Collection extends BaseEloquentCollection implements ExportableInterface {
-
-    public function export()
-    {
-        return array_map(function($value)
-        {
-            return $value instanceof ExportableInterface ? $value->export() : $value;
-
-        }, $this->items);
-    }
+class Collection extends BaseEloquentCollection implements Exportable
+{
+    use ExportCollection;
 }
