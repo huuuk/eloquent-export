@@ -10,6 +10,7 @@ use AdvancedEloquent\Export\Relations\BelongsToMany;
 use AdvancedEloquent\Export\Relations\HasMany;
 use Illuminate\Support\Str;
 use AdvancedEloquent\Export\Exceptions\ExportException;
+use AdvancedEloquent\Export\Exceptions\NotImportableException;
 use ReflectionClass;
 
 trait ExportAndImport {
@@ -95,6 +96,12 @@ trait ExportAndImport {
 
                 // Сохраняем полученный ключ, для подготовки атрибутов модели
                 $foreignKeys[ $_this->$attributeName()->getForeignKey() ] = $dependency->id;
+                // dd($foreignKeys);
+            }
+            else {
+                throw new NotImportableException(
+                    trans( 'eloquent-export::import.not_importable', [ 'class' => $attributeValue['class'] ] )
+                );
             }
         }
 

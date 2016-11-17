@@ -3,7 +3,7 @@ namespace AdvancedEloquent\Export\Relations;
 
 use Illuminate\Database\Eloquent\Relations\HasMany as BaseRelation;
 use AdvancedEloquent\Export\Interfaces\Importable;
-use AdvancedEloquent\Export\Exceptions\ImportException;
+use AdvancedEloquent\Export\Exceptions\NotImportableException;
 
 /**
 * 
@@ -19,7 +19,7 @@ class HasMany extends BaseRelation
     public function import(Array $models, $additionalAttributes = [])
     {
         if ( !($this->related instanceof Importable) ) {
-            throw new ImportException(
+            throw new NotImportableException(
                 trans( 'eloquent-export::import.not_importable', [ 'class' => get_class($this->related) ] )
             );
         }

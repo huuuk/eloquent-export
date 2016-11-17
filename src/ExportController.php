@@ -4,6 +4,7 @@ namespace AdvancedEloquent\Export;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use AdvancedEloquent\Export\Exceptions\ImportException;
+use AdvancedEloquent\Export\Exceptions\NotImportableException;
 use ReflectionClass;
 
 class ExportController extends Controller
@@ -52,7 +53,7 @@ class ExportController extends Controller
         // Проверяем если класс поддерживет импорт/экспорт
         $reflection = new ReflectionClass( $data['class'] );
         if ( !$reflection->implementsInterface('AdvancedEloquent\Export\Interfaces\Importable')) {
-            throw new ImportException(trans('eloquent-export::import.not_importable', ['class' => $data['class']]));
+            throw new NotImportableException(trans('eloquent-export::import.not_importable', ['class' => $data['class']]));
             // return 'Presented class don\'t support import/export operations.';
         }
 
@@ -61,6 +62,11 @@ class ExportController extends Controller
         // Ну соответсвенно импортируем
         $reflection->newInstance()->import($data, $additionalAttributes);
 
-        return redirect()->back();
+        if ($url = $request->get('suceess_redirect_url', false)) {
+            return redirect($url)->withSuccessImport(true);
+        }
+        else {
+            return redirect()->back()->withSuccessImport(true);
+        }
     }
 }

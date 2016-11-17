@@ -19,13 +19,17 @@ class ExportServiceProvider extends ServiceProvider {
 
         // publish package views
         $this->publishes([
-            __DIR__.'/resources/views/' => base_path('resources/views/vendor/eloquent-export'),
+            __DIR__.'/../resources/views/' => base_path('resources/views/vendor/eloquent-export'),
         ], 'views');
+
+        $this->publishes([
+            __DIR__.'/../resources/lang/ru' => base_path('resources/lang/packages/ru/eloquent-export'),
+        ], 'lang');
 
         $this->loadViewsFrom(__DIR__.'/../resources/views/', 'eloquent-export');
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang/', 'eloquent-export');
 
-        if (config('export.built_in_routes')) {
+        if (config('export.builtin_routes')) {
             include 'routes.php';
         }
     }

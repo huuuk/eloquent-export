@@ -1,4 +1,4 @@
 <?php 
 return [
-    'built_in_routes' => true,
+    'builtin_routes' => true,
 ];

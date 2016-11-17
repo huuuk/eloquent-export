@@ -12,5 +12,8 @@
         {!! Form::hidden('supported_types[]', $type) !!}
     @endforeach
 @endif
+@if (!empty($successRedirect))
+    <input type="hidden" name="success_redirect_url" value="{{ $successRedirect }}">
+@endif
 {!! Form::submit('Импортировать', ['class' => 'btn btn-primary']) !!}
 {!! Form::close() !!}
